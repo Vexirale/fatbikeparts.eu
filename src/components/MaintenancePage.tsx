@@ -1,9 +1,12 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Wrench, Mail, Settings } from 'lucide-react';
 
 const MaintenancePage = () => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Trigger animations after component mounts
@@ -13,6 +16,37 @@ const MaintenancePage = () => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        const x = (e.clientX - centerX) / rect.width * 20; // Reduced multiplier for subtler effect
+        const y = (e.clientY - centerY) / rect.height * 20;
+        
+        setMousePos({ x, y });
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  const handleTopCogClick = () => {
+    setIsSpinning(true);
+    setTimeout(() => setIsSpinning(false), 1000);
+  };
+
+  const getTiltStyle = (element: 'top' | 'mail' | 'decorative') => {
+    const intensity = element === 'top' ? 0.3 : element === 'mail' ? 0.2 : 0.4;
+    return {
+      transform: `perspective(1000px) rotateX(${-mousePos.y * intensity}deg) rotateY(${mousePos.x * intensity}deg)`,
+      transition: 'transform 0.1s ease-out'
+    };
+  };
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -25,13 +59,17 @@ const MaintenancePage = () => {
       <div className="absolute top-0 left-0 w-full h-64 bg-fatbike-light opacity-30 rounded-b-full transform -translate-y-32"></div>
       
       {/* Main content container */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
+      <div ref={containerRef} className="relative z-10 min-h-screen flex items-center justify-center px-4">
         <div className="max-w-2xl mx-auto text-center">
           
           {/* Animated bike icon */}
           <div className={`mb-8 transition-all duration-1000 ${isLoaded ? 'animate-scale-in' : 'opacity-0'}`}>
-            <div className="inline-flex items-center justify-center w-24 h-24 bg-white rounded-full shadow-lg border-4 border-fatbike-accent animate-pulse-gentle">
-              <Settings className="w-12 h-12 text-fatbike-dark" />
+            <div 
+              className="inline-flex items-center justify-center w-24 h-24 bg-white rounded-full shadow-lg border-4 border-fatbike-accent animate-pulse-gentle cursor-pointer"
+              onClick={handleTopCogClick}
+              style={getTiltStyle('top')}
+            >
+              <Settings className={`w-12 h-12 text-fatbike-dark transition-transform duration-1000 ${isSpinning ? 'rotate-[360deg]' : ''}`} />
             </div>
           </div>
 
@@ -52,7 +90,10 @@ const MaintenancePage = () => {
 
           {/* Contact info with slide-up animation */}
           <div className={`transition-all duration-800 delay-700 ${isLoaded ? 'animate-slide-up' : 'opacity-0'}`}>
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-fatbike-light">
+            <div 
+              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-fatbike-light"
+              style={getTiltStyle('mail')}
+            >
               <div className="flex items-center justify-center mb-3">
                 <Mail className="w-6 h-6 text-fatbike-accent mr-2" />
                 <span className="text-fatbike-dark font-semibold font-league-spartan">Toch Contact nodig?</span>
@@ -68,13 +109,22 @@ const MaintenancePage = () => {
 
           {/* Decorative elements */}
           <div className={`mt-12 flex justify-center space-x-8 transition-all duration-1000 delay-900 ${isLoaded ? 'animate-fade-in' : 'opacity-0'}`}>
-            <div className="flex items-center justify-center w-12 h-12 bg-fatbike-bright rounded-full shadow-md">
+            <div 
+              className="flex items-center justify-center w-12 h-12 bg-fatbike-bright rounded-full shadow-md"
+              style={getTiltStyle('decorative')}
+            >
               <Wrench className="w-6 h-6 text-white" />
             </div>
-            <div className="flex items-center justify-center w-12 h-12 bg-fatbike-accent rounded-full shadow-md">
+            <div 
+              className="flex items-center justify-center w-12 h-12 bg-fatbike-accent rounded-full shadow-md"
+              style={getTiltStyle('decorative')}
+            >
               <Settings className="w-6 h-6 text-white" />
             </div>
-            <div className="flex items-center justify-center w-12 h-12 bg-fatbike-medium rounded-full shadow-md overflow-hidden">
+            <div 
+              className="flex items-center justify-center w-12 h-12 bg-fatbike-medium rounded-full shadow-md overflow-hidden"
+              style={getTiltStyle('decorative')}
+            >
               <img 
                 src="/lovable-uploads/503fb88b-1cab-4725-a3eb-2627f71f2f6a.png" 
                 alt="FatbikeParts icon" 
